@@ -1,4 +1,6 @@
 import { formatDistanceToNow } from "date-fns";
+// TODO: Ensure react-markdown is installed: npm install react-markdown
+import ReactMarkdown from "react-markdown";
 
 interface Message {
   id: string;
@@ -34,7 +36,11 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
             : "bg-slate-100 text-slate-800"
         }`}>
           <div className="whitespace-pre-wrap break-words">
-            {message.content}
+            {isUser ? (
+              message.content
+            ) : (
+              <ReactMarkdown>{message.content}</ReactMarkdown>
+            )}
           </div>
           {/* Enhanced prompt indicator */}
           {isUser && message.isEnhanced && (
