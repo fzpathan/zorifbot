@@ -1,0 +1,1 @@
+# No schemas needed. Database and user/message models removed; backend is now stateless. 
