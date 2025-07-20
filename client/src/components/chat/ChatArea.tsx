@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2, Download, Settings } from "lucide-react";
+import { Trash2, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
 import { apiRequest } from "@/lib/queryClient";
+import { useCallback } from "react";
+import { Sun, Moon } from "lucide-react";
 
 interface Message {
   id: string;
@@ -37,8 +39,28 @@ function saveMessages(messages: Message[]) {
 export default function ChatArea({ isPromptEnhancementEnabled }: ChatAreaProps) {
   const [messages, setMessages] = useState<Message[]>(loadMessages());
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedModel, setSelectedModel] = useState("phi4"); // default model
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("deepseek-dark-mode") === "true";
+    }
+    return false;
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  // Effect to add/remove 'dark' class on <html>
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (darkMode) {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+    localStorage.setItem("deepseek-dark-mode", darkMode ? "true" : "false");
+  }, [darkMode]);
+
+  const toggleDarkMode = useCallback(() => setDarkMode((d) => !d), []);
 
   useEffect(() => {
     saveMessages(messages);
@@ -57,18 +79,44 @@ export default function ChatArea({ isPromptEnhancementEnabled }: ChatAreaProps) 
     };
     setMessages((prev) => [...prev, userMsg]);
     try {
+      // Send the last 10 messages as history for context
+      const history = [...messages, userMsg].slice(-10).map(({ id, content, sender }) => ({ id, content, sender }));
       const response = await apiRequest("POST", "/api/message", {
         content: content.trim(),
         is_enhanced: isPromptEnhancementEnabled,
+        history, // include history in the payload
+        model: selectedModel, // include selected model
       });
-      const data = await response.json();
+      // Stream the response
+      let aiMsgContent = "";
       const aiMsg: Message = {
         id: `${Date.now()}-ai`,
-        content: data.aiMessage,
+        content: "",
         sender: "ai",
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, aiMsg]);
+      const reader = response.body?.getReader();
+      if (reader) {
+        const decoder = new TextDecoder();
+        let done = false;
+        while (!done) {
+          const { value, done: doneReading } = await reader.read();
+          done = doneReading;
+          if (value) {
+            aiMsgContent += decoder.decode(value, { stream: !done });
+            setMessages((prev) => {
+              // Update the last AI message with the streamed content
+              const updated = [...prev];
+              const lastIdx = updated.length - 1;
+              if (updated[lastIdx]?.sender === "ai") {
+                updated[lastIdx] = { ...updated[lastIdx], content: aiMsgContent };
+              }
+              return updated;
+            });
+          }
+        }
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -121,8 +169,9 @@ export default function ChatArea({ isPromptEnhancementEnabled }: ChatAreaProps) 
       {/* Chat Header */}
       <div className="bg-surface border-b border-slate-200 p-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-            <i className="fas fa-robot text-white"></i>
+          {/* Prominent icon on the left top */}
+          <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mr-2">
+            <i className="fas fa-robot text-white text-2xl"></i>
           </div>
           <div>
             <h1 className="text-lg font-semibold text-slate-800">DeepSeek Assistant</h1>
@@ -133,6 +182,25 @@ export default function ChatArea({ isPromptEnhancementEnabled }: ChatAreaProps) 
           </div>
         </div>
         <div className="flex items-center space-x-2">
+          {/* Dark mode toggle button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleDarkMode}
+            title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
+          {/* Model selection dropdown */}
+          <select
+            className="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            value={selectedModel}
+            onChange={e => setSelectedModel(e.target.value)}
+            title="Select model"
+          >
+            <option value="phi4">Phi-4</option>
+            <option value="deepseek">DeepSeek</option>
+          </select>
           <Button
             variant="ghost"
             size="sm"
@@ -149,13 +217,7 @@ export default function ChatArea({ isPromptEnhancementEnabled }: ChatAreaProps) 
           >
             <Download className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            title="Settings"
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
+          {/* Removed Settings icon */}
         </div>
       </div>
       {/* Messages Container */}

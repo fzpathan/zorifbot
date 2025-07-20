@@ -4,7 +4,9 @@ This is the FastAPI backend for the DeepSeek Chat application. It is now statele
 
 ## Features
 - REST API for prompt enhancement and prompt templates
-- DeepSeek AI API integration (simulated by default)
+- **Model selection:** Supports multiple AI models (DeepSeek, Phi-4) via a model selection dropdown in the frontend
+- **Streaming responses:** Uses FastAPI's StreamingResponse to stream AI responses to the frontend for better UX
+- **External AI API integration:** Uses `httpx` for async HTTP calls to external AI APIs (DeepSeek, Phi-4)
 - CORS enabled for frontend development
 
 ## Requirements
@@ -21,8 +23,12 @@ cd backend
 pip install -r requirements.txt
 ```
 
-### 3. (Optional) Configure DeepSeek API key
-If you want to use a real DeepSeek API key, set the `DEEPSEEK_API_KEY` environment variable.
+### 3. Configure API Keys
+Set the following environment variables for your external AI providers:
+- `DEEPSEEK_API_KEY` — Your DeepSeek API key
+- `PHI4_API_KEY` — Your Phi-4 API key
+
+You can set these in your shell or in a `.env` file (if using a tool like `python-dotenv`).
 
 ### 4. Run the backend server
 ```sh
@@ -37,12 +43,27 @@ npm run dev
 - The frontend will connect to the backend API at the same port.
 
 ## API Endpoints
-- `POST /api/message` — Send a message and get an AI response (stateless)
+- `POST /api/message` — Send a message and get an AI response (stateless, supports model selection and streaming)
+  - **Request body:**
+    - `content` (str): The user's message
+    - `is_enhanced` (bool): Whether to enhance the prompt
+    - `history` (list): Previous messages for context
+    - `model` (str): Model to use ("phi4" or "deepseek")
+  - **Response:** Streams the AI's response as plain text
 - `GET /api/prompt-templates` — Get all prompt templates
 - `GET /api/prompt-templates/{category}` — Get prompt templates by category
 - `POST /api/enhance-prompt` — Enhance a prompt
 
-**Note:** No chat history or user data is stored on the backend. All previous messages should be managed on the client side (e.g., in local storage).
+**Note:** No chat history or user data is stored on the backend. All previous messages are managed on the client side (e.g., in local storage).
+
+## How Model Selection Works
+- The frontend provides a dropdown for users to select the AI model ("phi4" or "deepseek").
+- The backend uses the `model` field in the request to route the prompt to the correct external API using `httpx`.
+- The response is streamed back to the frontend for real-time display.
+
+## How Streaming Works
+- The backend uses FastAPI's `StreamingResponse` to send the AI's reply in chunks, improving user experience.
+- If your external AI API supports streaming, you can further optimize the backend to relay the stream directly.
 
 ## License
 MIT 
