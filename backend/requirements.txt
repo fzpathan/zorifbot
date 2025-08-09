@@ -1,4 +1,6 @@
 fastapi
 uvicorn
 pydantic
-httpx 
+httpx
+python-multipart
+aiofiles 

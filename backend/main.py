@@ -223,6 +223,105 @@ def enhance_prompt_endpoint(
         logger.error(f"Unexpected error in enhance_prompt: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
+# Conversation endpoints
+@app.get("/api/conversations/{user_id}")
+async def get_user_conversations(user_id: str):
+    """Get all conversations for a user"""
+    try:
+        if not user_id:
+            raise HTTPException(status_code=400, detail="User ID is required")
+        
+        # Mock data for now - in a real implementation, this would query a database
+        mock_conversations = [
+            {
+                "id": "conv_1",
+                "title": "Python Code Optimization",
+                "lastMessage": "How can I optimize this sorting algorithm?",
+                "messageCount": 8,
+                "createdAt": "2024-01-15T10:30:00Z",
+                "updatedAt": "2024-01-15T14:22:00Z",
+                "user_id": user_id
+            },
+            {
+                "id": "conv_2", 
+                "title": "React Component Design",
+                "lastMessage": "What's the best way to structure this component?",
+                "messageCount": 12,
+                "createdAt": "2024-01-14T09:15:00Z",
+                "updatedAt": "2024-01-14T16:45:00Z",
+                "user_id": user_id
+            },
+            {
+                "id": "conv_3",
+                "title": "Database Schema Question",
+                "lastMessage": "Should I use a foreign key here?",
+                "messageCount": 5,
+                "createdAt": "2024-01-13T13:20:00Z",
+                "updatedAt": "2024-01-13T15:10:00Z",
+                "user_id": user_id
+            }
+        ]
+        
+        logger.info(f"Retrieved {len(mock_conversations)} conversations for user {user_id}")
+        return mock_conversations
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving conversations for user {user_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error retrieving conversations")
+
+@app.delete("/api/conversations/{conversation_id}")
+async def delete_conversation(conversation_id: str):
+    """Delete a conversation by ID"""
+    try:
+        if not conversation_id:
+            raise HTTPException(status_code=400, detail="Conversation ID is required")
+        
+        # Mock deletion - in a real implementation, this would delete from database
+        logger.info(f"Deleted conversation {conversation_id}")
+        return {"message": "Conversation deleted successfully", "conversation_id": conversation_id}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting conversation {conversation_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error deleting conversation")
+
+@app.get("/api/conversations/{conversation_id}/messages")
+async def get_conversation_messages(conversation_id: str):
+    """Get all messages for a specific conversation"""
+    try:
+        if not conversation_id:
+            raise HTTPException(status_code=400, detail="Conversation ID is required")
+        
+        # Mock messages - in a real implementation, this would query database
+        mock_messages = [
+            {
+                "id": "msg_1",
+                "content": "How can I optimize this sorting algorithm?",
+                "sender": "user",
+                "timestamp": "2024-01-15T10:30:00Z",
+                "conversation_id": conversation_id
+            },
+            {
+                "id": "msg_2",
+                "content": "Here are several ways to optimize your sorting algorithm...",
+                "sender": "assistant",
+                "timestamp": "2024-01-15T10:31:00Z",
+                "conversation_id": conversation_id
+            }
+        ]
+        
+        logger.info(f"Retrieved {len(mock_messages)} messages for conversation {conversation_id}")
+        return mock_messages
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving messages for conversation {conversation_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error retrieving conversation messages")
+
 # Health check endpoint
 @app.get("/health")
 def health_check():

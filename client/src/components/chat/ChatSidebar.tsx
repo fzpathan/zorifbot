@@ -1,5 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
-import { PromptTemplate } from "@shared/schema";
 import { Switch } from "@/components/ui/switch";
 import PromptSuggestion from "./PromptSuggestion";
 import { customPrompts } from "@/lib/customPrompts";
@@ -10,12 +8,8 @@ interface ChatSidebarProps {
 }
 
 export default function ChatSidebar({ isPromptEnhancementEnabled, onTogglePromptEnhancement }: ChatSidebarProps) {
-  const { data: templates = [], isLoading } = useQuery<PromptTemplate[]>({
-    queryKey: ["/api/prompt-templates"],
-  });
-
-  // Merge backend and static prompts
-  const allTemplates = [...templates, ...customPrompts];
+  // Only use static customPrompts
+  const allTemplates = [...customPrompts];
 
   // Group templates by category
   const templatesByCategory = allTemplates.reduce((acc, template) => {
@@ -24,7 +18,7 @@ export default function ChatSidebar({ isPromptEnhancementEnabled, onTogglePrompt
     }
     acc[template.category].push(template);
     return acc;
-  }, {} as Record<string, PromptTemplate[]>);
+  }, {} as Record<string, typeof customPrompts[number][]>);
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -56,33 +50,19 @@ export default function ChatSidebar({ isPromptEnhancementEnabled, onTogglePrompt
 
       {/* Prompt Categories */}
       <div className="p-4 space-y-4 overflow-y-auto flex-1">
-        {isLoading ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="animate-pulse">
-                <div className="h-4 bg-slate-200 rounded w-1/2 mb-2"></div>
-                <div className="space-y-2">
-                  <div className="h-16 bg-slate-100 rounded-lg"></div>
-                  <div className="h-16 bg-slate-100 rounded-lg"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          Object.entries(templatesByCategory).map(([category, categoryTemplates]) => (
-            <div key={category} className="space-y-2">
-              <h3 className="text-sm font-medium text-slate-700 flex items-center">
-                <i className={`${getCategoryIcon(category)} text-muted-foreground mr-2`}></i>
-                {category}
-              </h3>
-              <div className="space-y-2">
-                {categoryTemplates.map((template) => (
-                  <PromptSuggestion key={template.id} template={template} />
-                ))}
-              </div>
+        {Object.entries(templatesByCategory).map(([category, categoryTemplates]) => (
+          <div key={category} className="space-y-2">
+            <h3 className="text-sm font-medium text-slate-700 flex items-center">
+              <i className={`${getCategoryIcon(category)} text-muted-foreground mr-2`}></i>
+              {category}
+            </h3>
+            <div className="space-y-2">
+              {categoryTemplates.map((template) => (
+                <PromptSuggestion key={template.id} template={template} />
+              ))}
             </div>
-          ))
-        )}
+          </div>
+        ))}
       </div>
 
       {/* Prompt Enhancement Toggle */}

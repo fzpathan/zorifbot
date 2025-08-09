@@ -1,55 +1,21 @@
 import { Switch } from "../ui/switch";
-import PromptSuggestion from "./PromptSuggestion";
-import { customPrompts } from "../../lib/customPrompts";
+import PromptDropdown from "./PromptDropdown";
+import ChatHistory from "./ChatHistory";
 import { useUser } from "../../lib/userContext";
 import { X } from "lucide-react";
 
 export default function ChatSidebar({ isPromptEnhancementEnabled, onTogglePromptEnhancement }) {
-  const { user, setSelectedCategory, removeSelectedCategory } = useUser();
-  
-  // Only use static customPrompts
-  const allTemplates = [...customPrompts];
-
-  // Group templates by category
-  const templatesByCategory = allTemplates.reduce((acc, template) => {
-    if (!acc[template.category]) {
-      acc[template.category] = [];
-    }
-    acc[template.category].push(template);
-    return acc;
-  }, {});
-
-  const getCategoryIcon = (category) => {
-    switch (category) {
-      case "Code Analysis":
-        return "fas fa-code";
-      case "Problem Solving":
-        return "fas fa-puzzle-piece";
-      case "Documentation":
-        return "fas fa-file-alt";
-      case "Productivity":
-        return "fas fa-align-left";
-      case "Learning":
-        return "fas fa-graduation-cap";
-      default:
-        return "fas fa-lightbulb";
-    }
-  };
-
-  const handlePromptSelect = (template) => {
-    // Set the category when user selects a prompt
-    setSelectedCategory(template.category);
-  };
+  const { user, removeSelectedCategory } = useUser();
 
   return (
     <div className="w-80 bg-surface border-r border-slate-200 flex flex-col">
       {/* Sidebar Header */}
       <div className="p-4 border-b border-slate-200">
         <h2 className="text-lg font-semibold text-slate-800 flex items-center">
-          <i className="fas fa-lightbulb text-primary mr-2"></i>
-          Prompt Suggestions
+          <i className="fas fa-comments text-primary mr-2"></i>
+          Chat Assistant
         </h2>
-        <p className="text-sm text-muted-foreground mt-1">Enhance your queries for better results</p>
+        <p className="text-sm text-muted-foreground mt-1">Templates and conversation history</p>
         
         {/* Selected Category Display */}
         {user.preferences.selectedCategory && (
@@ -73,25 +39,21 @@ export default function ChatSidebar({ isPromptEnhancementEnabled, onTogglePrompt
         )}
       </div>
 
-      {/* Prompt Categories */}
-      <div className="p-4 space-y-4 overflow-y-auto flex-1">
-        {Object.entries(templatesByCategory).map(([category, categoryTemplates]) => (
-          <div key={category} className="space-y-2">
-            <h3 className="text-sm font-medium text-slate-700 flex items-center">
-              <i className={`${getCategoryIcon(category)} text-muted-foreground mr-2`}></i>
-              {category}
-            </h3>
-            <div className="space-y-2">
-              {categoryTemplates.map((template) => (
-                <PromptSuggestion 
-                  key={template.id} 
-                  template={template}
-                  onSelect={() => handlePromptSelect(template)}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
+      {/* Main Content */}
+      <div className="flex flex-col flex-1 overflow-hidden">
+        {/* Prompt Templates Dropdown */}
+        <div className="p-4 border-b border-slate-200">
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            <i className="fas fa-lightbulb text-slate-500 mr-2"></i>
+            Prompt Templates
+          </label>
+          <PromptDropdown />
+        </div>
+
+        {/* Chat History */}
+        <div className="flex-1 overflow-hidden">
+          <ChatHistory />
+        </div>
       </div>
 
       {/* Prompt Enhancement Toggle */}
