@@ -8,28 +8,28 @@ export default function ChatSidebar({ isPromptEnhancementEnabled, onTogglePrompt
   const { user, removeSelectedCategory } = useUser();
 
   return (
-    <div className="w-80 bg-surface border-r border-slate-200 flex flex-col">
+    <div className="w-80 bg-surface border-r border-slate-200 flex flex-col dark:bg-background dark:border-slate-600">
       {/* Sidebar Header */}
-      <div className="p-4 border-b border-slate-200">
-        <h2 className="text-lg font-semibold text-slate-800 flex items-center">
+      <div className="p-4 border-b border-slate-200 dark:border-slate-600">
+        <h2 className="text-lg font-semibold text-slate-800 flex items-center dark:text-foreground">
           <i className="fas fa-comments text-primary mr-2"></i>
           Chat Assistant
         </h2>
         <p className="text-sm text-muted-foreground mt-1">Templates and conversation history</p>
         
         {/* Selected Category Display */}
-        {user.preferences.selectedCategory && (
-          <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+        {user?.preferences?.selectedCategory && (
+          <div className="mt-3 p-3 bg-blue-50 rounded-lg dark:bg-blue-900/20">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-blue-800 mb-1">Selected Category:</p>
-                <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
-                  {user.preferences.selectedCategory}
+                <p className="text-xs font-medium text-blue-800 mb-1 dark:text-blue-300">Selected Category:</p>
+                <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full dark:bg-blue-800 dark:text-blue-200">
+                  {user?.preferences?.selectedCategory}
                 </span>
               </div>
               <button
                 onClick={removeSelectedCategory}
-                className="text-blue-600 hover:text-blue-800 p-1"
+                className="text-blue-600 hover:text-blue-800 p-1 dark:text-blue-400 dark:hover:text-blue-300"
                 title="Remove category"
               >
                 <X className="h-3 w-3" />
@@ -42,9 +42,9 @@ export default function ChatSidebar({ isPromptEnhancementEnabled, onTogglePrompt
       {/* Main Content */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Prompt Templates Dropdown */}
-        <div className="p-4 border-b border-slate-200">
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            <i className="fas fa-lightbulb text-slate-500 mr-2"></i>
+        <div className="p-4 border-b border-slate-200 dark:border-slate-600">
+          <label className="block text-sm font-medium text-slate-700 mb-2 dark:text-slate-300">
+            <i className="fas fa-lightbulb text-slate-500 mr-2 dark:text-slate-400"></i>
             Prompt Templates
           </label>
           <PromptDropdown />
@@ -57,10 +57,10 @@ export default function ChatSidebar({ isPromptEnhancementEnabled, onTogglePrompt
       </div>
 
       {/* Prompt Enhancement Toggle */}
-      <div className="p-4 border-t border-slate-200">
+      <div className="p-4 border-t border-slate-200 dark:border-slate-600">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="text-sm font-medium text-slate-700">Auto-enhance prompts</h4>
+            <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300">Auto-enhance prompts</h4>
             <p className="text-xs text-muted-foreground">Automatically improve your queries</p>
           </div>
           <Switch

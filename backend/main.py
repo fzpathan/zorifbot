@@ -1,5 +1,6 @@
 import os
 import logging
+import time
 from fastapi import FastAPI, HTTPException, Body, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
@@ -192,15 +193,157 @@ async def upload_document(
         logger.error(f"Unexpected error in upload_document: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
+# Prompt templates data - centralized in backend
+PROMPT_TEMPLATES = [
+    {
+        "id": "custom-1",
+        "category": "Productivity",
+        "title": "Summarize this text",
+        "template": "Please summarize the following text in a concise way:",
+        "icon": "fas fa-align-left"
+    },
+    {
+        "id": "custom-2",
+        "category": "Learning",
+        "title": "Explain this concept simply",
+        "template": "Explain the following concept in simple terms for a beginner:",
+        "icon": "fas fa-graduation-cap"
+    },
+    {
+        "id": "default-1",
+        "category": "Code Analysis",
+        "title": "Analyze this code for optimization opportunities",
+        "template": "Please analyze the following code for optimization opportunities, focusing on performance, memory usage, and algorithmic efficiency. Provide specific suggestions with examples:",
+        "icon": "fas fa-code"
+    },
+    {
+        "id": "default-2",
+        "category": "Code Analysis",
+        "title": "Explain the security implications of this function",
+        "template": "Review the following code for security vulnerabilities and explain potential risks. Include recommendations for secure coding practices:",
+        "icon": "fas fa-shield-alt"
+    },
+    {
+        "id": "default-3",
+        "category": "Code Analysis",
+        "title": "Review code for best practices and conventions",
+        "template": "Please review this code for adherence to best practices, coding conventions, and maintainability. Suggest improvements for readability and structure:",
+        "icon": "fas fa-check-circle"
+    },
+    {
+        "id": "default-4",
+        "category": "Problem Solving",
+        "title": "Break down this complex problem step by step",
+        "template": "Help me break down this complex problem into smaller, manageable steps. Provide a systematic approach to solving:",
+        "icon": "fas fa-puzzle-piece"
+    },
+    {
+        "id": "default-5",
+        "category": "Problem Solving",
+        "title": "What are alternative solutions to this issue?",
+        "template": "Analyze this problem and suggest multiple alternative solutions. Compare the pros and cons of each approach:",
+        "icon": "fas fa-lightbulb"
+    },
+    {
+        "id": "default-6",
+        "category": "Documentation",
+        "title": "Generate comprehensive documentation for this code",
+        "template": "Create comprehensive documentation for the following code, including function descriptions, parameter explanations, return values, and usage examples:",
+        "icon": "fas fa-file-alt"
+    },
+    {
+        "id": "default-7",
+        "category": "Documentation",
+        "title": "Create API documentation with examples",
+        "template": "Generate API documentation for this code including endpoint descriptions, request/response formats, authentication requirements, and practical examples:",
+        "icon": "fas fa-book"
+    },
+    {
+        "id": "default-8",
+        "category": "Research",
+        "title": "Research this topic thoroughly",
+        "template": "Conduct comprehensive research on the following topic, including current trends, best practices, and recent developments:",
+        "icon": "fas fa-search"
+    },
+    {
+        "id": "default-9",
+        "category": "Creative Writing",
+        "title": "Write creatively about this topic",
+        "template": "Write a creative piece about the following topic, using engaging storytelling techniques:",
+        "icon": "fas fa-pen-fancy"
+    }
+]
+
+# Helper function to get category icon
+def get_category_icon(category: str) -> str:
+    """Get icon class for a given category"""
+    category_icons = {
+        "Code Analysis": "fas fa-code",
+        "Problem Solving": "fas fa-puzzle-piece",
+        "Documentation": "fas fa-file-alt",
+        "Productivity": "fas fa-align-left",
+        "Learning": "fas fa-graduation-cap",
+        "Research": "fas fa-search",
+        "Creative Writing": "fas fa-pen-fancy"
+    }
+    return category_icons.get(category, "fas fa-lightbulb")
+
+@app.get("/api/categories")
+def get_categories():
+    """Get all available categories"""
+    try:
+        # Extract unique categories from templates
+        categories = list(set(template["category"] for template in PROMPT_TEMPLATES))
+        
+        # Return categories with their icons
+        category_list = [
+            {
+                "name": category,
+                "icon": get_category_icon(category),
+                "count": len([t for t in PROMPT_TEMPLATES if t["category"] == category])
+            }
+            for category in sorted(categories)
+        ]
+        
+        logger.info(f"Retrieved {len(category_list)} categories")
+        return category_list
+        
+    except Exception as e:
+        logger.error(f"Error retrieving categories: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error retrieving categories")
+
 @app.get("/api/prompt-templates")
 def get_prompt_templates():
-    """Return empty array since templates are managed on frontend"""
-    return []
+    """Get all prompt templates"""
+    try:
+        logger.info(f"Retrieved {len(PROMPT_TEMPLATES)} prompt templates")
+        return PROMPT_TEMPLATES
+        
+    except Exception as e:
+        logger.error(f"Error retrieving prompt templates: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error retrieving prompt templates")
 
 @app.get("/api/prompt-templates/{category}")
 def get_prompt_templates_by_category(category: str):
-    """Return empty array since templates are managed on frontend"""
-    return []
+    """Get prompt templates for a specific category"""
+    try:
+        if not category:
+            raise HTTPException(status_code=400, detail="Category is required")
+        
+        # Filter templates by category
+        category_templates = [
+            template for template in PROMPT_TEMPLATES 
+            if template["category"].lower() == category.lower()
+        ]
+        
+        logger.info(f"Retrieved {len(category_templates)} templates for category '{category}'")
+        return category_templates
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving templates for category '{category}': {str(e)}")
+        raise HTTPException(status_code=500, detail="Error retrieving category templates")
 
 @app.post("/api/enhance-prompt")
 def enhance_prompt_endpoint(
@@ -321,6 +464,62 @@ async def get_conversation_messages(conversation_id: str):
     except Exception as e:
         logger.error(f"Error retrieving messages for conversation {conversation_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Error retrieving conversation messages")
+
+# User management endpoints
+@app.get("/api/user/default")
+def get_default_user():
+    """Get default user information"""
+    try:
+        # In a real implementation, this might:
+        # 1. Generate a new user session
+        # 2. Return user from database
+        # 3. Handle authentication
+        
+        default_user = {
+            "id": "backend-user-" + str(int(time.time() * 1000))[-8:],  # Generate unique ID
+            "name": "Backend User",
+            "preferences": {
+                "selectedCategory": None,
+                "modelPreference": "phi4"
+            },
+            "source": "backend",
+            "createdAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        }
+        
+        logger.info(f"Generated default user: {default_user['id']}")
+        return default_user
+        
+    except Exception as e:
+        logger.error(f"Error generating default user: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error generating default user")
+
+@app.get("/api/user/{user_id}")
+def get_user(user_id: str):
+    """Get user information by ID"""
+    try:
+        if not user_id:
+            raise HTTPException(status_code=400, detail="User ID is required")
+        
+        # Mock user data - in a real implementation, this would query a database
+        user_data = {
+            "id": user_id,
+            "name": f"User {user_id[-4:]}",
+            "preferences": {
+                "selectedCategory": None,
+                "modelPreference": "phi4"
+            },
+            "source": "backend",
+            "lastActive": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        }
+        
+        logger.info(f"Retrieved user data for: {user_id}")
+        return user_data
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving user {user_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error retrieving user")
 
 # Health check endpoint
 @app.get("/health")

@@ -3,6 +3,7 @@ import { Button } from '../ui/button';
 import { Trash2, Download, Sun, Moon, Upload } from 'lucide-react';
 import UploadModal from '../upload/UploadModal';
 import { useUser } from '../../lib/userContext';
+import UserStatus from './UserStatus';
 
 export default function ChatHeader({ 
   darkMode, 
@@ -13,23 +14,24 @@ export default function ChatHeader({
   handleExportChat 
 }) {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const { user } = useUser();
+  const { user, isLoading } = useUser();
 
   return (
     <>
-      <div className="bg-surface border-b border-slate-200 p-4 flex items-center justify-between">
+      <div className="bg-surface border-b border-slate-200 p-4 flex items-center justify-between dark:bg-background dark:border-slate-600">
         <div className="flex items-center space-x-3">
           {/* Prominent icon on the left top */}
           <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mr-2">
             <i className="fas fa-robot text-white text-2xl"></i>
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-slate-800">DeepSeek Assistant</h1>
+            <h1 className="text-lg font-semibold text-slate-800 dark:text-foreground">DeepSeek Assistant</h1>
             <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm text-muted-foreground">Online</span>
+              <UserStatus />
               <span className="text-xs text-muted-foreground">•</span>
-              <span className="text-xs text-muted-foreground">User: {user.id}</span>
+              <span className="text-xs text-muted-foreground">
+                User: {isLoading ? 'Loading...' : user?.id || 'Unknown'}
+              </span>
             </div>
           </div>
         </div>
@@ -58,13 +60,13 @@ export default function ChatHeader({
           
           {/* Model selection dropdown */}
           <select
-            className="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            className="border border-slate-200 bg-surface text-slate-800 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary dark:bg-background dark:text-foreground dark:border-slate-600"
             value={selectedModel}
             onChange={e => setSelectedModel(e.target.value)}
             title="Select model"
           >
-            <option value="phi4">Phi-4</option>
-            <option value="deepseek">DeepSeek</option>
+            <option value="phi4" className="bg-surface text-slate-800 dark:bg-background dark:text-foreground">Phi-4</option>
+            <option value="deepseek" className="bg-surface text-slate-800 dark:bg-background dark:text-foreground">DeepSeek</option>
           </select>
           
           <Button

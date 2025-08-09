@@ -96,8 +96,8 @@ export default function ChatArea({ isPromptEnhancementEnabled }) {
         is_enhanced: isPromptEnhancementEnabled,
         history, // include history in the payload
         model: selectedModel, // include selected model
-        user_id: user.id, // include user ID
-        selected_category: user.preferences.selectedCategory, // include selected category (single)
+        user_id: user?.id || 'unknown', // include user ID
+        selected_category: user?.preferences?.selectedCategory, // include selected category (single)
       };
       
       const response = await apiRequest("POST", "/api/message", apiPayload);
