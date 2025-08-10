@@ -3,70 +3,28 @@ import { cachedFetch } from './apiCache';
 
 const UserContext = createContext();
 
-// Fallback user when backend is unavailable
-const FALLBACK_USER = {
-  id: 'offline-user-' + Date.now().toString(36),
-  name: 'Offline User',
-  preferences: {
-    selectedCategory: null,
-    modelPreference: 'phi4'
-  },
-  source: 'fallback',
-  createdAt: new Date().toISOString()
-};
-
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasTriedBackend, setHasTriedBackend] = useState(false);
 
-  // Fetch user from backend with fallback
+  // Fetch user from backend - no fallback
   const initializeUser = useCallback(async () => {
     if (hasTriedBackend && user) return; // Don't retry if already loaded
     
     setIsLoading(true);
     
     try {
-      // Check if we have a stored user ID
-      const storedUserId = localStorage.getItem('user-id');
+      // Always get a new user from backend
+      const response = await cachedFetch('/api/user', {
+        signal: AbortSignal.timeout(3000) // 3 second timeout
+      }, 5 * 60 * 1000); // Cache for 5 minutes
       
       let userData;
-      if (storedUserId) {
-        // Try to fetch existing user
-        try {
-          const response = await cachedFetch(`/api/user/${storedUserId}`, {
-            signal: AbortSignal.timeout(3000) // 3 second timeout
-          }, 5 * 60 * 1000); // Cache for 5 minutes
-          
-          if (response.ok) {
-            userData = await response.json();
-          } else {
-            throw new Error('User not found');
-          }
-        } catch (err) {
-          console.warn('Failed to fetch existing user, getting new default user');
-          // If existing user fetch fails, get a new default user
-          const response = await cachedFetch('/api/user/default', {
-            signal: AbortSignal.timeout(3000)
-          }, 5 * 60 * 1000);
-          
-          if (response.ok) {
-            userData = await response.json();
-          } else {
-            throw new Error('Failed to get default user');
-          }
-        }
+      if (response.ok) {
+        userData = await response.json();
       } else {
-        // No stored user, get default from backend
-        const response = await cachedFetch('/api/user/default', {
-          signal: AbortSignal.timeout(3000)
-        }, 5 * 60 * 1000);
-        
-        if (response.ok) {
-          userData = await response.json();
-        } else {
-          throw new Error('Failed to get default user');
-        }
+        throw new Error('Failed to get user from backend');
       }
       
       // Store user ID for future sessions
@@ -77,18 +35,9 @@ export function UserProvider({ children }) {
       console.log('✅ User loaded from backend:', userData.id);
       
     } catch (error) {
-      console.warn('⚠️ Backend unavailable, using fallback user:', error.message);
-      
-      // Use fallback user when backend is unavailable
-      const fallbackUser = {
-        ...FALLBACK_USER,
-        id: localStorage.getItem('user-id') || FALLBACK_USER.id
-      };
-      
-      // Store fallback user ID
-      localStorage.setItem('user-id', fallbackUser.id);
-      setUser(fallbackUser);
+      console.error('❌ Backend unavailable, cannot initialize user:', error.message);
       setHasTriedBackend(true);
+      // Don't set any user - let the app handle the error state
     } finally {
       setIsLoading(false);
     }
@@ -143,7 +92,8 @@ export function UserProvider({ children }) {
     setSelectedCategory,
     removeSelectedCategory,
     retryBackendConnection,
-    initializeUser
+    initializeUser,
+    isBackendAvailable: hasTriedBackend && user !== null
   };
 
   return (

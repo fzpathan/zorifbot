@@ -3,6 +3,7 @@ import { queryClient } from './lib/queryClient';
 import { Toaster } from './components/ui/toaster';
 import { TooltipProvider } from './components/ui/tooltip';
 import { UserProvider } from './lib/userContext';
+import { ConversationProvider } from './lib/conversationContext';
 import { Switch, Route } from 'wouter';
 import NotFound from './pages/not-found';
 import Chat from './pages/chat';
@@ -19,12 +20,14 @@ function Router() {
 function App() {
   return (
     <UserProvider>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </QueryClientProvider>
+      <ConversationProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </QueryClientProvider>
+      </ConversationProvider>
     </UserProvider>
   );
 }

@@ -45,22 +45,24 @@ const apiCache = new ApiCache();
 
 // Enhanced fetch with caching
 export async function cachedFetch(url, options = {}, cacheTTL) {
-  const cacheKey = `${url}_${JSON.stringify(options)}`;
+  // Prepend backend URL if it's a relative URL
+  const fullUrl = url.startsWith('http') ? url : `http://localhost:5000${url}`;
+  const cacheKey = `${fullUrl}_${JSON.stringify(options)}`;
   
   // Check cache first
   const cachedData = apiCache.get(cacheKey);
   if (cachedData && !options.force) {
-    console.log(`Cache hit for: ${url}`);
+    console.log(`Cache hit for: ${fullUrl}`);
     return Promise.resolve({
       ok: true,
       json: () => Promise.resolve(cachedData)
     });
   }
 
-  console.log(`Cache miss for: ${url}`);
+  console.log(`Cache miss for: ${fullUrl}`);
   
   try {
-    const response = await fetch(url, options);
+    const response = await fetch(fullUrl, options);
     
     if (response.ok) {
       const data = await response.json();

@@ -139,3 +139,39 @@
     opacity: 1; 
   }
 }
+
+/* Code block styling */
+.prose pre {
+  @apply bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto border border-slate-700;
+}
+
+.prose code {
+  @apply font-mono text-sm;
+}
+
+.prose code:not(pre code) {
+  @apply bg-slate-200 text-slate-800 px-1.5 py-0.5 rounded;
+}
+
+/* Copy button animations */
+.copy-button-enter {
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.copy-button-enter-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 200ms, transform 200ms;
+}
+
+.copy-button-exit {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.copy-button-exit-active {
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 200ms, transform 200ms;
+}

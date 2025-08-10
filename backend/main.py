@@ -7,6 +7,11 @@ import httpx
 from fastapi.responses import StreamingResponse
 from typing import Optional
 import json
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -17,7 +22,7 @@ app = FastAPI()
 # Allow frontend dev server
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -39,38 +44,134 @@ def enhance_prompt(original_prompt: str, selected_category: Optional[str] = None
     
     return enhancement_prefix + original_prompt + enhancement_suffix
 
-# Helper: Call DeepSeek API
+# Helper: Generate fallback response
+def generate_fallback_response(prompt: str) -> str:
+    """Generate a helpful fallback response when API is not available"""
+    prompt_lower = prompt.lower()
+    
+    # Simple keyword-based responses
+    if any(word in prompt_lower for word in ['hello', 'hi', 'hey']):
+        return "Hello! I'm your AI assistant. I'm currently in offline mode, but I'm here to help. How can I assist you today?"
+    
+    elif any(word in prompt_lower for word in ['code', 'programming', 'function', 'algorithm']):
+        return f"I see you're asking about code: '{prompt}'. While I'm in offline mode, I can suggest that you:\n\n1. Check the syntax and structure of your code\n2. Look for common programming patterns\n3. Consider edge cases and error handling\n4. Test with different inputs\n\nWould you like me to help you with any specific programming concepts when the API is available?"
+    
+    elif any(word in prompt_lower for word in ['explain', 'what is', 'how does']):
+        return f"You're asking: '{prompt}'. This is a great question! While I'm in offline mode, I'd recommend:\n\n1. Breaking down the concept into smaller parts\n2. Looking for real-world examples\n3. Checking official documentation\n4. Practicing with simple examples\n\nI'll be able to provide more detailed explanations once the API is available."
+    
+    elif any(word in prompt_lower for word in ['help', 'assist', 'support']):
+        return "I'm here to help! While I'm currently in offline mode, I can still guide you. What specific area do you need assistance with? I'll be able to provide more detailed help once the API connection is restored."
+    
+    else:
+        return f"Thank you for your message: '{prompt}'. I'm currently in offline mode, but I'm here to assist you. I'll be able to provide more comprehensive responses once the API connection is available. Is there anything specific I can help you with?"
+
+# Helper: Call AI API (OpenRouter with Phi-4)
 async def call_external_ai_api(prompt: str, model: str, user_id: str) -> str:
     # Log the API call for debugging
     logger.info(f"Calling AI API for user {user_id} with model {model}")
     
-    # Placeholder URLs and API keys - replace with your real endpoints and keys
-    endpoints = {
-        "deepseek": {
-            "url": "https://api.deepseek.com/v1/chat",
-            "api_key": os.getenv("DEEPSEEK_API_KEY", "your_deepseek_api_key")
-        },
-        "phi4": {
-            "url": "https://api.phi4.com/v1/chat",
-            "api_key": os.getenv("PHI4_API_KEY", "your_phi4_api_key")
-        }
-    }
-    model_key = model if model in endpoints else "deepseek"
-    endpoint = endpoints[model_key]
-    headers = {"Authorization": f"Bearer {endpoint['api_key']}"}
-    payload = {"prompt": prompt, "model": model_key}
-    
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(endpoint["url"], json=payload, headers=headers, timeout=30)
-            response.raise_for_status()
-            # Assume the response JSON has a 'result' field with the AI's reply
-            result = response.json().get("result", "[No response from AI]")
-            logger.info(f"Successfully received response for user {user_id}")
+    # OpenRouter API configuration
+    if model == "phi4":
+        api_key = os.getenv("OPENROUTER_API_KEY","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")
+        if not api_key:
+            logger.warning("OpenRouter API key not configured, using fallback response")
+            return generate_fallback_response(prompt)
+        
+        try:
+            # Initialize OpenAI client with OpenRouter configuration
+            client = OpenAI(
+                base_url="https://openrouter.ai/api/v1",
+                api_key=api_key,
+            )
+            
+            # Create completion using OpenRouter
+            completion = client.chat.completions.create(
+                extra_headers={
+                    "HTTP-Referer": "http://localhost:3000",  # Your frontend URL
+                    "X-Title": "ZorifBot",  # Your app name
+                },
+                model="microsoft/phi-4",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                max_tokens=1000,
+                temperature=0.7
+            )
+            
+            result = completion.choices[0].message.content
+            logger.info(f"Successfully received OpenRouter Phi-4 response for user {user_id}")
             return result
-    except Exception as e:
-        logger.error(f"Error calling AI API for user {user_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"AI API error: {str(e)}")
+            
+        except Exception as e:
+            logger.error(f"Error calling OpenRouter API for user {user_id}: {str(e)}")
+            return generate_fallback_response(prompt)
+    
+    # DeepSeek API configuration (fallback)
+    elif model == "deepseek":
+        url = "https://api.deepseek.com/v1/chat/completions"
+        api_key = os.getenv("DEEPSEEK_API_KEY")
+        
+        if not api_key:
+            logger.warning("DeepSeek API key not configured, using fallback response")
+            return generate_fallback_response(prompt)
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f"Bearer {api_key}"
+        }
+        
+        # DeepSeek expects messages array format
+        payload = {
+            "model": "deepseek-chat",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            "max_tokens": 1000,
+            "temperature": 0.7
+        }
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, json=payload, headers=headers, timeout=30)
+                
+                # Handle specific error codes
+                if response.status_code == 402:
+                    logger.error("DeepSeek API: Payment required - insufficient credits or billing not set up")
+                    return generate_fallback_response(prompt)
+                
+                response.raise_for_status()
+                
+                # Parse DeepSeek response format
+                response_data = response.json()
+                if 'choices' in response_data and len(response_data['choices']) > 0:
+                    result = response_data['choices'][0]['message']['content']
+                    logger.info(f"Successfully received DeepSeek response for user {user_id}")
+                    return result
+                else:
+                    raise HTTPException(status_code=500, detail="Invalid response format from DeepSeek")
+                    
+        except httpx.HTTPStatusError as e:
+            logger.error(f"DeepSeek API HTTP error: {e.response.status_code} - {e.response.text}")
+            if e.response.status_code == 402:
+                return generate_fallback_response(prompt)
+            elif e.response.status_code == 401:
+                return generate_fallback_response(prompt)
+            else:
+                return generate_fallback_response(prompt)
+        except Exception as e:
+            logger.error(f"Error calling DeepSeek API for user {user_id}: {str(e)}")
+            return generate_fallback_response(prompt)
+    
+    # Fallback for other models (placeholder)
+    else:
+        logger.warning(f"Model {model} not implemented, using placeholder response")
+        return f"This is a placeholder response for model {model}. Your prompt was: {prompt}"
 
 # Helper: Process uploaded document
 async def process_uploaded_document(file: UploadFile, user_id: str) -> dict:
@@ -126,16 +227,17 @@ async def send_message(
         content = data.get("content")
         is_enhanced = data.get("is_enhanced", False)
         history = data.get("history", [])
-        model = data.get("model", "deepseek")
-        user_id = data.get("user_id", "unknown")
+        model = data.get("model", "phi4")
+        user_id = data.get("user_id")
         selected_category = data.get("selected_category")
         
         # Validate required fields
         if not content or not isinstance(content, str):
             raise HTTPException(status_code=400, detail="Content is required")
         
+        # If no user_id provided, generate a new one
         if not user_id:
-            raise HTTPException(status_code=400, detail="User ID is required")
+            user_id = "backend-user-" + str(int(time.time() * 1000))[-8:]
         
         logger.info(f"Processing message for user {user_id} with category: {selected_category}")
         
@@ -153,8 +255,11 @@ async def send_message(
         # Call external AI API
         ai_response = await call_external_ai_api(prompt_to_send, model, user_id)
         
-        # Stream the response
+        # Stream the response with user_id included
         async def stream_response(text: str):
+            # First yield the user_id as a special header
+            yield f"USER_ID:{user_id}\n"
+            # Then stream the actual response
             for i in range(0, len(text), 30):
                 yield text[i:i+30]
                 import asyncio
@@ -171,12 +276,13 @@ async def send_message(
 @app.post("/api/upload-document")
 async def upload_document(
     file: UploadFile = File(...),
-    user_id: str = Body(..., embed=True)
+    user_id: Optional[str] = Body(None, embed=True)
 ):
     """Upload and process document endpoint"""
     try:
+        # If no user_id provided, generate a new one
         if not user_id:
-            raise HTTPException(status_code=400, detail="User ID is required")
+            user_id = "backend-user-" + str(int(time.time() * 1000))[-8:]
         
         if not file:
             raise HTTPException(status_code=400, detail="File is required")
@@ -367,12 +473,12 @@ def enhance_prompt_endpoint(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 # Conversation endpoints
-@app.get("/api/conversations/{user_id}")
-async def get_user_conversations(user_id: str):
-    """Get all conversations for a user"""
+@app.get("/api/conversations")
+async def get_user_conversations():
+    """Get all conversations for the current user"""
     try:
-        if not user_id:
-            raise HTTPException(status_code=400, detail="User ID is required")
+        # Generate a user ID for this request
+        user_id = "backend-user-" + str(int(time.time() * 1000))[-8:]
         
         # Mock data for now - in a real implementation, this would query a database
         mock_conversations = [
@@ -408,10 +514,8 @@ async def get_user_conversations(user_id: str):
         logger.info(f"Retrieved {len(mock_conversations)} conversations for user {user_id}")
         return mock_conversations
         
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Error retrieving conversations for user {user_id}: {str(e)}")
+        logger.error(f"Error retrieving conversations: {str(e)}")
         raise HTTPException(status_code=500, detail="Error retrieving conversations")
 
 @app.delete("/api/conversations/{conversation_id}")
@@ -466,39 +570,12 @@ async def get_conversation_messages(conversation_id: str):
         raise HTTPException(status_code=500, detail="Error retrieving conversation messages")
 
 # User management endpoints
-@app.get("/api/user/default")
-def get_default_user():
-    """Get default user information"""
+@app.get("/api/user")
+def get_user():
+    """Get user information - always returns a new user"""
     try:
-        # In a real implementation, this might:
-        # 1. Generate a new user session
-        # 2. Return user from database
-        # 3. Handle authentication
-        
-        default_user = {
-            "id": "backend-user-" + str(int(time.time() * 1000))[-8:],  # Generate unique ID
-            "name": "Backend User",
-            "preferences": {
-                "selectedCategory": None,
-                "modelPreference": "phi4"
-            },
-            "source": "backend",
-            "createdAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-        }
-        
-        logger.info(f"Generated default user: {default_user['id']}")
-        return default_user
-        
-    except Exception as e:
-        logger.error(f"Error generating default user: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error generating default user")
-
-@app.get("/api/user/{user_id}")
-def get_user(user_id: str):
-    """Get user information by ID"""
-    try:
-        if not user_id:
-            raise HTTPException(status_code=400, detail="User ID is required")
+        # Always generate a new user ID
+        user_id = "backend-user-" + str(int(time.time() * 1000))[-8:]
         
         # Mock user data - in a real implementation, this would query a database
         user_data = {
@@ -512,14 +589,12 @@ def get_user(user_id: str):
             "lastActive": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         }
         
-        logger.info(f"Retrieved user data for: {user_id}")
+        logger.info(f"Generated new user: {user_id}")
         return user_data
         
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Error retrieving user {user_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error retrieving user")
+        logger.error(f"Error generating user: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error generating user")
 
 # Health check endpoint
 @app.get("/health")

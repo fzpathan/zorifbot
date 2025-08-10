@@ -3,13 +3,13 @@ import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 import { Send, Code, Smile } from "lucide-react";
 
-export default function MessageInput({ onSendMessage, isLoading, isPromptEnhancementEnabled }) {
+export default function MessageInput({ onSendMessage, isLoading, isPromptEnhancementEnabled, disabled = false }) {
   const [message, setMessage] = useState("");
   const [isEnhancing, setIsEnhancing] = useState(false);
   const textareaRef = useRef(null);
 
   const handleSend = async () => {
-    if (!message.trim() || isLoading) return;
+    if (!message.trim() || isLoading || disabled) return;
     
     if (isPromptEnhancementEnabled) {
       setIsEnhancing(true);
@@ -73,12 +73,12 @@ export default function MessageInput({ onSendMessage, isLoading, isPromptEnhance
           <div className="relative">
             <Textarea
               ref={textareaRef}
-              placeholder="Type your message here... (Try: 'Analyze this code for optimization')"
+              placeholder={disabled ? "Backend not available. Please check your connection." : "Type your message here... (Try: 'Analyze this code for optimization')"}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
               className="min-h-[52px] max-h-[120px] pr-12 resize-none"
-              disabled={isLoading || isEnhancing}
+              disabled={isLoading || isEnhancing || disabled}
             />
             
             {/* Character Count */}
@@ -94,6 +94,7 @@ export default function MessageInput({ onSendMessage, isLoading, isPromptEnhance
                 variant="ghost"
                 size="sm"
                 onClick={insertCodeBlock}
+                disabled={disabled}
                 className="h-6 px-2 text-xs"
               >
                 <Code className="h-3 w-3 mr-1" />
@@ -102,6 +103,7 @@ export default function MessageInput({ onSendMessage, isLoading, isPromptEnhance
               <Button
                 variant="ghost"
                 size="sm"
+                disabled={disabled}
                 className="h-6 px-2 text-xs"
               >
                 <Smile className="h-3 w-3 mr-1" />
@@ -120,9 +122,9 @@ export default function MessageInput({ onSendMessage, isLoading, isPromptEnhance
         {/* Send Button */}
         <Button
           onClick={handleSend}
-          disabled={!message.trim() || isLoading || isEnhancing}
+          disabled={!message.trim() || isLoading || isEnhancing || disabled}
           className="min-w-[52px] h-[52px]"
-          title="Send message"
+          title={disabled ? "Backend not available" : "Send message"}
         >
           <Send className="h-4 w-4" />
         </Button>
