@@ -72,7 +72,7 @@ async def call_external_ai_api(prompt: str, model: str, user_id: str) -> str:
     
     # OpenRouter API configuration
     if model == "phi4":
-        api_key = os.getenv("OPENROUTER_API_KEY","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")
+        api_key = os.getenv("OPENROUTER_API_KEY","")
         if not api_key:
             logger.warning("OpenRouter API key not configured, using fallback response")
             return generate_fallback_response(prompt)
@@ -604,4 +604,5 @@ def health_check():
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=5000) 
