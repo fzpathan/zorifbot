@@ -14,12 +14,21 @@ export default function Chat() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      <ChatSidebar 
-        isPromptEnhancementEnabled={isPromptEnhancementEnabled}
-        onTogglePromptEnhancement={setIsPromptEnhancementEnabled}
+    <div className="flex flex-col h-screen overflow-hidden bg-background">
+      {/* 1cm box at the top */}
+      <div 
+        className="w-full bg-muted border-b border-border"
+        style={{ height: '2cm' }}
       />
-      <ChatArea isPromptEnhancementEnabled={isPromptEnhancementEnabled} />
+      
+      {/* Main chat content */}
+      <div className="flex flex-1 overflow-hidden">
+        <ChatSidebar 
+          isPromptEnhancementEnabled={isPromptEnhancementEnabled}
+          onTogglePromptEnhancement={setIsPromptEnhancementEnabled}
+        />
+        <ChatArea isPromptEnhancementEnabled={isPromptEnhancementEnabled} />
+      </div>
     </div>
   );
 } 

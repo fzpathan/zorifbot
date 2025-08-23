@@ -167,12 +167,14 @@ export default function ChatArea({ isPromptEnhancementEnabled }) {
               aiMsgContent += chunk;
             }
             
+            // Capture the current value of aiMsgContent to avoid closure issues
+            const currentContent = aiMsgContent;
             updateCurrentMessages((prev) => {
               // Update the last AI message with the streamed content
               const updated = [...prev];
               const lastIdx = updated.length - 1;
               if (updated[lastIdx]?.sender === "ai") {
-                updated[lastIdx] = { ...updated[lastIdx], content: aiMsgContent };
+                updated[lastIdx] = { ...updated[lastIdx], content: currentContent };
               }
               return updated;
             });

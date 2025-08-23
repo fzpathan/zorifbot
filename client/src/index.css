@@ -70,6 +70,58 @@
   }
 }
 
+@layer components {
+  /* Markdown table styles for better height management */
+  .markdown-table-container {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin: 1rem 0;
+  }
+
+  .markdown-table-container table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+
+  .markdown-table-container th,
+  .markdown-table-container td {
+    padding: 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    word-wrap: break-word;
+    max-width: 200px;
+  }
+
+  .markdown-table-container th {
+    background-color: var(--muted);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .markdown-table-container tr:hover {
+    background-color: var(--accent);
+  }
+
+  /* Responsive table handling */
+  @media (max-width: 768px) {
+    .markdown-table-container {
+      max-height: 300px;
+    }
+    
+    .markdown-table-container th,
+    .markdown-table-container td {
+      padding: 0.25rem;
+      font-size: 0.75rem;
+      max-width: 120px;
+    }
+  }
+}
+
 @layer utilities {
   .animate-fade-in {
     animation: fadeIn 0.3s ease-in-out;

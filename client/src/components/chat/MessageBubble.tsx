@@ -16,11 +16,27 @@ interface MessageBubbleProps {
   message: Message;
 }
 
+// Custom table component to wrap tables in a scrollable container
+const TableWrapper = ({ children }: { children: React.ReactNode }) => (
+  <div className="markdown-table-container">
+    {children}
+  </div>
+);
+
 export default function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.sender === "user";
   const timeAgo = message.timestamp
     ? formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })
     : "Just now";
+
+  // Custom components for ReactMarkdown
+  const components = {
+    table: ({ children }: { children: React.ReactNode }) => (
+      <TableWrapper>
+        <table>{children}</table>
+      </TableWrapper>
+    ),
+  };
 
   return (
     <div className={`flex items-start space-x-3 animate-fade-in ${isUser ? "justify-end" : ""}`}>
@@ -39,7 +55,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
             {isUser ? (
               message.content
             ) : (
-              <ReactMarkdown>{message.content}</ReactMarkdown>
+              <ReactMarkdown components={components}>{message.content}</ReactMarkdown>
             )}
           </div>
           {/* Enhanced prompt indicator */}
