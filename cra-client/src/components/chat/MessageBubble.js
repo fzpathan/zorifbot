@@ -1,124 +1,128 @@
 import { formatDistanceToNow } from "date-fns";
-import ReactMarkdown from "react-markdown";
 import { useUser } from "../../lib/userContext";
 import { Button } from "../ui/button";
 import { useState } from "react";
+import MarkdownRenderer from "./MarkdownRenderer";
 
-// Simple emoji mapping for common emojis
-const emojiMap = {
-  ':smile:': '😊',
-  ':heart:': '❤️',
-  ':thumbsup:': '👍',
-  ':thumbsdown:': '👎',
-  ':fire:': '🔥',
-  ':rocket:': '🚀',
-  ':star:': '⭐',
-  ':check:': '✅',
-  ':x:': '❌',
-  ':warning:': '⚠️',
-  ':info:': 'ℹ️',
-  ':question:': '❓',
-  ':exclamation:': '❗',
-  ':clap:': '👏',
-  ':pray:': '🙏',
-  ':eyes:': '👀',
-  ':sunglasses:': '😎',
-  ':laugh:': '😂',
-  ':cry:': '😢',
-  ':angry:': '😠',
-};
+// Test message for debugging backend issues
+const TEST_MESSAGE = `# Backend API Test
 
-// Function to replace emoji codes with actual emojis
-function replaceEmojis(text) {
-  let result = text;
-  Object.entries(emojiMap).forEach(([code, emoji]) => {
-    result = result.replace(new RegExp(code, 'g'), emoji);
-  });
-  return result;
-}
+## Python Code Example
+Here's a sample Python code to test syntax highlighting:
 
-// Code block component with copy button
-function CodeBlock({ children, className }) {
-  const [copied, setCopied] = useState(false);
-  const code = children?.props?.children || children;
+\`\`\`python
+import requests
+import json
 
-  const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy: ', err);
+def test_backend_api():
+    """Test function to check backend connectivity"""
+    api_url = "http://localhost:5000/api/chat"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer your-api-key-here"
     }
-  };
-
-  return (
-    <div className="relative group">
-      {/* Copy button */}
-      <Button
-        onClick={copyToClipboard}
-        variant="ghost"
-        size="sm"
-        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-slate-800/50 dark:bg-slate-700/50 hover:bg-slate-700/50 dark:hover:bg-slate-600/50 text-white border border-slate-600 dark:border-slate-500"
-      >
-        {copied ? (
-          <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        ) : (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-          </svg>
-        )}
-      </Button>
-      
-      {/* Code block */}
-      <pre className={`${className} bg-slate-900 dark:bg-slate-950 text-slate-100 p-4 rounded-lg overflow-x-auto border border-slate-700 dark:border-slate-600`}>
-        <code>{code}</code>
-      </pre>
-    </div>
-  );
-}
-
-// Inline code component
-function InlineCode({ children }) {
-  const [copied, setCopied] = useState(false);
-  const code = children;
-
-  const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy: ', err);
+    
+    payload = {
+        "message": "Hello, this is a test message",
+        "user_id": "test_user_123"
     }
-  };
+    
+    try:
+        response = requests.post(api_url, json=payload, headers=headers)
+        print(f"Status Code: {response.status_code}")
+        print(f"Response: {response.json()}")
+        return response.status_code == 200
+    except requests.exceptions.RequestException as e:
+        print(f"Error connecting to backend: {e}")
+        return False
 
-  return (
-    <span className="relative group inline-block">
-      <code className="bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-1.5 py-0.5 rounded text-sm font-mono">
-        {children}
-      </code>
-      <Button
-        onClick={copyToClipboard}
-        variant="ghost"
-        size="sm"
-        className="absolute -top-6 -right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-slate-800 dark:bg-slate-700 text-white text-xs p-1 h-6 w-6 border border-slate-600 dark:border-slate-500"
-      >
-        {copied ? (
-          <svg className="w-3 h-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        ) : (
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-          </svg>
-        )}
-      </Button>
-    </span>
-  );
+# Test the connection
+if __name__ == "__main__":
+    success = test_backend_api()
+    print(f"Backend test {'PASSED' if success else 'FAILED'}")
+\`\`\`
+
+## API Response Status Codes
+
+| Status Code | Meaning | Description |
+|-------------|---------|-------------|
+| 200 | OK | Request successful |
+| 400 | Bad Request | Invalid request format |
+| 401 | Unauthorized | Missing or invalid API key |
+| 403 | Forbidden | API key doesn't have permission |
+| 404 | Not Found | Endpoint doesn't exist |
+| 500 | Internal Server Error | Backend server error |
+| 502 | Bad Gateway | Backend service unavailable |
+| 503 | Service Unavailable | Backend overloaded |
+
+## Common Backend Issues
+
+| Issue | Symptoms | Solution |
+|-------|----------|----------|
+| API Key Invalid | 401 Unauthorized | Check API key in backend config |
+| Backend Down | Connection refused | Start backend server |
+| CORS Error | Browser console error | Configure CORS in backend |
+| Database Error | 500 Internal Server Error | Check database connection |
+| Rate Limiting | 429 Too Many Requests | Wait and retry |
+
+## JavaScript Test Code
+
+\`\`\`javascript
+// Test frontend to backend communication
+async function testBackendConnection() {
+    const testData = {
+        message: "Test message from frontend",
+        timestamp: new Date().toISOString()
+    };
+    
+    try {
+        const response = await fetch('http://localhost:5000/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer your-api-key'
+            },
+            body: JSON.stringify(testData)
+        });
+        
+        console.log('Response status:', response.status);
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        return response.ok;
+    } catch (error) {
+        console.error('Backend connection failed:', error);
+        return false;
+    }
 }
+
+// Run test
+testBackendConnection().then(success => {
+    console.log('Backend test result:', success ? 'SUCCESS' : 'FAILED');
+});
+\`\`\`
+
+## Error Debugging Checklist
+
+1. **Check Backend Server**
+   - Is the server running on port 5000?
+   - Check terminal for error messages
+
+2. **Verify API Key**
+   - Check backend configuration
+   - Ensure key is properly set in environment
+
+3. **Network Issues**
+   - Test with curl or Postman
+   - Check firewall settings
+
+4. **CORS Configuration**
+   - Backend should allow requests from frontend origin
+   - Check CORS headers in response
+
+---
+
+*This test message includes tables, code blocks, and formatting to verify markdown rendering and backend connectivity.*`;
 
 export default function MessageBubble({ message }) {
   const { user } = useUser();
@@ -139,49 +143,8 @@ export default function MessageBubble({ message }) {
     }
   };
 
-  // Custom components for ReactMarkdown
-  const components = {
-    code: ({ node, inline, className, children, ...props }) => {
-      const match = /language-(\w+)/.exec(className || '');
-      return !inline ? (
-        <CodeBlock className={className} {...props}>
-          {children}
-        </CodeBlock>
-      ) : (
-        <InlineCode {...props}>{children}</InlineCode>
-      );
-    },
-    pre: ({ children }) => <>{children}</>,
-    p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
-    ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
-    ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
-    li: ({ children }) => <li className="text-slate-700 dark:text-slate-300">{children}</li>,
-    h1: ({ children }) => <h1 className="text-2xl font-bold mb-3 text-slate-900 dark:text-slate-100">{children}</h1>,
-    h2: ({ children }) => <h2 className="text-xl font-bold mb-2 text-slate-900 dark:text-slate-100">{children}</h2>,
-    h3: ({ children }) => <h3 className="text-lg font-bold mb-2 text-slate-900 dark:text-slate-100">{children}</h3>,
-    blockquote: ({ children }) => (
-      <blockquote className="border-l-4 border-slate-300 dark:border-slate-600 pl-4 italic text-slate-600 dark:text-slate-400 mb-3">
-        {children}
-      </blockquote>
-    ),
-    table: ({ children }) => (
-      <div className="overflow-x-auto mb-3">
-        <table className="min-w-full border border-slate-300 rounded-lg">
-          {children}
-        </table>
-      </div>
-    ),
-    th: ({ children }) => (
-      <th className="border border-slate-300 dark:border-slate-600 px-3 py-2 bg-slate-100 dark:bg-slate-800 font-semibold text-slate-900 dark:text-slate-100">
-        {children}
-      </th>
-    ),
-    td: ({ children }) => (
-      <td className="border border-slate-300 dark:border-slate-600 px-3 py-2 text-slate-700 dark:text-slate-300">
-        {children}
-      </td>
-    ),
-  };
+  // For testing purposes, you can temporarily replace message.content with TEST_MESSAGE
+  const displayContent = message.content === "test_backend" ? TEST_MESSAGE : message.content;
 
   return (
     <div className={`flex items-start space-x-3 animate-fade-in ${isUser ? "justify-end" : ""}`}>
@@ -220,12 +183,10 @@ export default function MessageBubble({ message }) {
           <div className="prose prose-sm max-w-none">
             {isUser ? (
               <div className="whitespace-pre-wrap break-words">
-                {message.content}
+                {displayContent}
               </div>
             ) : (
-              <ReactMarkdown components={components}>
-                {replaceEmojis(message.content)}
-              </ReactMarkdown>
+              <MarkdownRenderer markdownContent={displayContent} />
             )}
           </div>
           {/* Enhanced prompt indicator */}

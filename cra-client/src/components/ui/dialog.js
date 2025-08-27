@@ -1,5 +1,4 @@
 import * as React from "react"
-import { X } from "lucide-react"
 import { cn } from "../../lib/utils"
 
 const Dialog = ({ open, onOpenChange, children }) => {
@@ -57,7 +56,7 @@ const DialogFooter = ({
   />
 )
 
-const DialogTitle = React.forwardRef(({ className, ...props }, ref) => (
+const DialogTitle = React.forwardRef(({ className, children, ...props }, ref) => (
   <h2
     ref={ref}
     className={cn(
@@ -65,7 +64,9 @@ const DialogTitle = React.forwardRef(({ className, ...props }, ref) => (
       className
     )}
     {...props}
-  />
+  >
+    {children}
+  </h2>
 ))
 
 const DialogDescription = React.forwardRef(({ className, ...props }, ref) => (

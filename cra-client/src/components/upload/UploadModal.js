@@ -62,7 +62,7 @@ export default function UploadModal({ isOpen, onClose }) {
         throw new Error(errorData.detail || `Upload failed: ${response.status}`);
       }
 
-      const result = await response.json();
+      await response.json();
       
       toast({
         title: "Upload successful",

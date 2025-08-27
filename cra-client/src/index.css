@@ -70,6 +70,83 @@
   }
 }
 
+@layer components {
+  /* Basic markdown styling */
+  .prose {
+    line-height: 1.6;
+  }
+  
+  .prose p {
+    margin-bottom: 1rem;
+  }
+  
+  .prose p:last-child {
+    margin-bottom: 0;
+  }
+  
+  .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+  }
+  
+  .prose ul, .prose ol {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+  }
+  
+  .prose li {
+    margin-bottom: 0.25rem;
+  }
+  
+  .prose blockquote {
+    border-left: 4px solid var(--border);
+    padding-left: 1rem;
+    margin: 1rem 0;
+    font-style: italic;
+    color: var(--muted-foreground);
+  }
+  
+  .prose table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.875rem;
+  }
+  
+  .prose th, .prose td {
+    padding: 0.5rem;
+    border: 1px solid var(--border);
+    text-align: left;
+  }
+  
+  .prose th {
+    background-color: var(--muted);
+    font-weight: 600;
+  }
+  
+  .prose code {
+    background-color: var(--muted);
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-size: 0.875em;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+  
+  .prose pre {
+    background-color: var(--muted);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+  }
+  
+  .prose pre code {
+    background: none;
+    padding: 0;
+  }
+}
+
 @layer utilities {
   .animate-fade-in {
     animation: fadeIn 0.3s ease-in-out;
@@ -227,6 +304,165 @@
   @apply bg-slate-200 text-slate-800 px-1.5 py-0.5 rounded;
 }
 
+/* Code block with copy button styling */
+.code-block-container {
+  @apply relative;
+}
+
+.code-block-container:hover .code-block-overlay {
+  @apply opacity-100;
+}
+
+.code-block-overlay {
+  @apply absolute top-2 right-2 z-10 opacity-0 transition-opacity duration-200;
+}
+
+.code-block-button {
+  @apply px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors duration-200;
+}
+
+.code-block-language {
+  @apply absolute top-2 left-2 z-10 px-2 py-1 text-xs bg-gray-700 text-white rounded opacity-0 transition-opacity duration-200;
+}
+
+.code-block-container:hover .code-block-language {
+  @apply opacity-100;
+}
+
+/* Text wrapping and overflow handling */
+.prose {
+  @apply break-words;
+  overflow-wrap: anywhere;
+  word-wrap: break-word;
+}
+
+.prose p {
+  @apply break-words;
+  overflow-wrap: anywhere;
+  word-wrap: break-word;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+  @apply break-words;
+  overflow-wrap: anywhere;
+  word-wrap: break-word;
+}
+
+.prose li {
+  @apply break-words;
+  overflow-wrap: anywhere;
+  word-wrap: break-word;
+}
+
+.prose blockquote {
+  @apply break-words;
+  overflow-wrap: anywhere;
+  word-wrap: break-word;
+}
+
+/* Table responsive handling */
+.prose table {
+  @apply w-full max-w-full overflow-x-auto;
+  font-size: clamp(0.75rem, 2vw, 0.875rem);
+}
+
+.prose table th,
+.prose table td {
+  @apply break-words;
+  overflow-wrap: anywhere;
+  word-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+  max-width: 200px;
+}
+
+/* Table wrapper for overflow handling */
+.table-wrapper {
+  @apply w-full overflow-x-auto;
+  max-width: 100%;
+}
+
+.table-container {
+  @apply min-w-full;
+}
+
+.table-container table {
+  @apply w-full border-collapse;
+}
+
+.table-container th,
+.table-container td {
+  @apply border border-gray-300 px-3 py-2 text-left break-words;
+  overflow-wrap: anywhere;
+  word-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+  max-width: 200px;
+}
+
+.table-container th {
+  @apply bg-gray-100 font-semibold;
+}
+
+.table-container tr:nth-child(even) {
+  @apply bg-gray-50;
+}
+
+.table-container tr:hover {
+  @apply bg-gray-100;
+}
+
+/* Responsive text sizing */
+.prose {
+  font-size: clamp(0.875rem, 2.5vw, 1rem);
+}
+
+.prose h1 {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+}
+
+.prose h2 {
+  font-size: clamp(1.25rem, 3.5vw, 1.5rem);
+}
+
+.prose h3 {
+  font-size: clamp(1.125rem, 3vw, 1.25rem);
+}
+
+.prose h4 {
+  font-size: clamp(1rem, 2.5vw, 1.125rem);
+}
+
+.prose h5 {
+  font-size: clamp(0.875rem, 2vw, 1rem);
+}
+
+.prose h6 {
+  font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+}
+
+/* Long text handling */
+.prose p {
+  @apply break-words;
+  overflow-wrap: anywhere;
+  word-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Code blocks responsive */
+.prose pre {
+  @apply overflow-x-auto;
+  font-size: clamp(0.75rem, 2vw, 0.875rem);
+}
+
+.prose code {
+  @apply break-words;
+  overflow-wrap: anywhere;
+  word-wrap: break-word;
+  word-break: break-all;
+}
+
 /* Copy button animations */
 .copy-button-enter {
   opacity: 0;
@@ -248,4 +484,46 @@
   opacity: 0;
   transform: scale(0.8);
   transition: opacity 200ms, transform 200ms;
+}
+
+/* Mobile specific adjustments */
+@media (max-width: 768px) {
+  .prose table {
+    font-size: 0.75rem;
+  }
+  
+  .prose table th,
+  .prose table td {
+    @apply px-2 py-1;
+    max-width: 150px;
+  }
+  
+  .prose pre {
+    font-size: 0.75rem;
+  }
+  
+  .prose {
+    font-size: 0.875rem;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+  .prose table {
+    font-size: 0.7rem;
+  }
+  
+  .prose table th,
+  .prose table td {
+    @apply px-1 py-0.5;
+    max-width: 120px;
+  }
+  
+  .prose pre {
+    font-size: 0.7rem;
+  }
+  
+  .prose {
+    font-size: 0.8rem;
+  }
 }

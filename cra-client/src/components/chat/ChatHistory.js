@@ -1,12 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
-import { useUser } from "../../lib/userContext";
+import { useEffect, useCallback } from "react";
 import { useConversation } from "../../lib/conversationContext";
 import { MessageSquare, Clock, Trash2 } from "lucide-react";
 
 export default function ChatHistory() {
-  const [error, setError] = useState(null);
-
-  const { user } = useUser();
   const { 
     conversations, 
     currentConversationId,
@@ -65,11 +61,6 @@ export default function ChatHistory() {
     } else {
       return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
     }
-  }, []);
-
-  // Clear error function
-  const handleRetry = useCallback(() => {
-    setError(null);
   }, []);
 
   return (

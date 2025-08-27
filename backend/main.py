@@ -47,11 +47,11 @@ def enhance_prompt(original_prompt: str, selected_category: Optional[str] = None
 # Helper: Generate fallback response
 def generate_fallback_response(prompt: str) -> str:
     """Generate a helpful fallback response when API is not available"""
-    prompt_lower = prompt.lower()
+    prompt_lower = prompt.lower().strip()
     
     # Simple keyword-based responses
     if any(word in prompt_lower for word in ['hello', 'hi', 'hey']):
-        return "Hello! I'm your AI assistant. I'm currently in offline mode, but I'm here to help. How can I assist you today?"
+        return "Hello! I'm your AI assistant. I'm currently in offline mode due to missing API key, but I'm here to help. How can I assist you today?"
     
     elif any(word in prompt_lower for word in ['code', 'programming', 'function', 'algorithm']):
         return f"I see you're asking about code: '{prompt}'. While I'm in offline mode, I can suggest that you:\n\n1. Check the syntax and structure of your code\n2. Look for common programming patterns\n3. Consider edge cases and error handling\n4. Test with different inputs\n\nWould you like me to help you with any specific programming concepts when the API is available?"
@@ -63,16 +63,15 @@ def generate_fallback_response(prompt: str) -> str:
         return "I'm here to help! While I'm currently in offline mode, I can still guide you. What specific area do you need assistance with? I'll be able to provide more detailed help once the API connection is restored."
     
     else:
-        return f"Thank you for your message: '{prompt}'. I'm currently in offline mode, but I'm here to assist you. I'll be able to provide more comprehensive responses once the API connection is available. Is there anything specific I can help you with?"
+        return f"Thank you for your message: '{prompt}'. I'm currently in offline mode due to missing API key, but I'm here to assist you. I'll be able to provide more comprehensive responses once the API connection is available. Is there anything specific I can help you with?"
 
 # Helper: Call AI API (OpenRouter with Phi-4)
 async def call_external_ai_api(prompt: str, model: str, user_id: str) -> str:
-    # Log the API call for debugging
     logger.info(f"Calling AI API for user {user_id} with model {model}")
     
     # OpenRouter API configuration
     if model == "phi4":
-        api_key = os.getenv("OPENROUTER_API_KEY","")
+        api_key = os.getenv("OPENROUTER_API_KEY")
         if not api_key:
             logger.warning("OpenRouter API key not configured, using fallback response")
             return generate_fallback_response(prompt)
@@ -158,12 +157,7 @@ async def call_external_ai_api(prompt: str, model: str, user_id: str) -> str:
                     
         except httpx.HTTPStatusError as e:
             logger.error(f"DeepSeek API HTTP error: {e.response.status_code} - {e.response.text}")
-            if e.response.status_code == 402:
-                return generate_fallback_response(prompt)
-            elif e.response.status_code == 401:
-                return generate_fallback_response(prompt)
-            else:
-                return generate_fallback_response(prompt)
+            return generate_fallback_response(prompt)
         except Exception as e:
             logger.error(f"Error calling DeepSeek API for user {user_id}: {str(e)}")
             return generate_fallback_response(prompt)
@@ -238,8 +232,6 @@ async def send_message(
         # If no user_id provided, generate a new one
         if not user_id:
             user_id = "backend-user-" + str(int(time.time() * 1000))[-8:]
-        
-        logger.info(f"Processing message for user {user_id} with category: {selected_category}")
         
         # Build context from conversation history
         context = "\n".join([
